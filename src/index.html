@@ -1,241 +1,641 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PhishGuard — URL Threat Detector</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #040810;
+            --panel: #070e1a;
+            --border: #0f2a4a;
+            --accent: #00d4ff;
+            --accent2: #00ff9d;
+            --danger: #ff2d55;
+            --danger-glow: rgba(255, 45, 85, 0.3);
+            --safe-glow: rgba(0, 255, 157, 0.3);
+            --accent-glow: rgba(0, 212, 255, 0.3);
+            --text: #c8e0f0;
+            --dim: #3a5a78;
+            --mono: 'Share Tech Mono', monospace;
+            --display: 'Orbitron', sans-serif;
+            --body: 'Rajdhani', sans-serif;
+        }
+
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: var(--body);
+            background: var(--bg);
             min-height: 100vh;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem;
-            color: #e0e0e0;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+            position: relative;
         }
 
-        .app {
+        /* Grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Scanline overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.08) 2px,
+                rgba(0, 0, 0, 0.08) 4px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 2;
             width: 100%;
-            max-width: 520px;
+            max-width: 580px;
         }
 
-        /* Header */
+        /* ── Header ── */
         .header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
-        .header .logo {
-            font-size: 2.5rem;
-            margin-bottom: 0.25rem;
+
+        .logo-ring {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow), inset 0 0 20px rgba(0,212,255,0.05);
+            margin-bottom: 1rem;
+            position: relative;
+            animation: pulse-ring 3s ease-in-out infinite;
         }
-        .header h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
+
+        @keyframes pulse-ring {
+            0%, 100% { box-shadow: 0 0 20px var(--accent-glow), inset 0 0 20px rgba(0,212,255,0.05); }
+            50% { box-shadow: 0 0 40px var(--accent-glow), 0 0 60px rgba(0,212,255,0.1), inset 0 0 20px rgba(0,212,255,0.08); }
+        }
+
+        .logo-ring::before {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .logo-icon { font-size: 1.8rem; }
+
+        h1 {
+            font-family: var(--display);
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 0.15em;
             color: #fff;
-            letter-spacing: -0.5px;
-        }
-        .header p {
-            font-size: 0.9rem;
-            color: #9ca3af;
-            margin-top: 0.35rem;
+            text-shadow: 0 0 30px var(--accent-glow);
         }
 
-        /* Card */
-        .card {
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        h1 span {
+            color: var(--accent);
         }
 
-        /* Input Group */
-        .input-group {
+        .tagline {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            color: var(--dim);
+            letter-spacing: 0.2em;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .tagline::before { content: '> '; color: var(--accent2); }
+
+        /* ── Status bar ── */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--dim);
+            margin-bottom: 0.75rem;
+            padding: 0 0.25rem;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent2);
+            box-shadow: 0 0 6px var(--accent2);
+            animation: blink 2s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .status-text { color: var(--accent2); }
+        .status-sep { color: var(--border); margin: 0 0.25rem; }
+
+        /* ── Panel ── */
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Corner decorations */
+        .panel::before, .panel::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-color: var(--accent);
+            border-style: solid;
+        }
+        .panel::before { top: 0; left: 0; border-width: 2px 0 0 2px; }
+        .panel::after  { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+        .panel-inner {
+            padding: 1.75rem;
+        }
+
+        /* ── Input area ── */
+        .input-label {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--dim);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-label span { color: var(--accent); }
+
+        .input-wrap {
             position: relative;
             margin-bottom: 1rem;
         }
-        .input-group .icon {
+
+        .input-prefix {
             position: absolute;
             left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 1.1rem;
-            color: #6b7280;
+            font-family: var(--mono);
+            font-size: 0.85rem;
+            color: var(--accent);
             pointer-events: none;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 0.85rem 1rem 0.85rem 2.75rem;
-            font-size: 0.95rem;
-            font-family: 'Inter', sans-serif;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.07);
-            color: #fff;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .input-group input::placeholder { color: #6b7280; }
-        .input-group input:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+            z-index: 1;
         }
 
-        /* Button */
-        .btn {
+        input[type="text"] {
             width: 100%;
-            padding: 0.85rem;
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
+            padding: 0.9rem 1rem 0.9rem 2.4rem;
+            font-family: var(--mono);
+            font-size: 0.88rem;
+            background: rgba(0, 212, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        input[type="text"]::placeholder {
+            color: #1e3a52;
+            font-size: 0.82rem;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            background: rgba(0, 212, 255, 0.06);
+            box-shadow: 0 0 0 1px rgba(0,212,255,0.2), 0 0 20px rgba(0,212,255,0.08);
+        }
+
+        /* cursor blink on focus */
+        input[type="text"]:focus::after {
+            content: '_';
+            animation: blink 1s step-end infinite;
+        }
+
+        /* ── Scan button ── */
+        .scan-btn {
+            width: 100%;
+            padding: 0.9rem;
+            font-family: var(--display);
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--bg);
+            background: var(--accent);
             border: none;
-            border-radius: 10px;
+            border-radius: 3px;
             cursor: pointer;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: #fff;
-            transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow 0.2s, transform 0.15s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45); }
-        .btn:active { transform: translateY(0); }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
 
+        .scan-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+            transform: translateX(-100%);
+            transition: transform 0s;
+        }
+
+        .scan-btn:hover:not(:disabled)::before {
+            transform: translateX(100%);
+            transition: transform 0.5s ease;
+        }
+
+        .scan-btn:hover:not(:disabled) {
+            box-shadow: 0 0 25px var(--accent-glow), 0 0 50px rgba(0,212,255,0.15);
+            transform: translateY(-1px);
+        }
+
+        .scan-btn:active:not(:disabled) { transform: translateY(0); }
+
+        .scan-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Spinner */
         .spinner {
             display: none;
-            width: 18px; height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(4,8,16,0.3);
+            border-top-color: var(--bg);
             border-radius: 50%;
-            animation: spin 0.6s linear infinite;
+            animation: spin 0.5s linear infinite;
         }
+
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Result */
-        .result {
-            margin-top: 1.25rem;
-            border-radius: 12px;
-            padding: 1.25rem 1.25rem;
-            display: none;
-            animation: fadeUp 0.35s ease;
+        /* ── Divider ── */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
         }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider-label {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--dim);
+            letter-spacing: 0.15em;
+        }
+
+        /* ── Result ── */
+        .result {
+            display: none;
+            animation: fadeUp 0.4s ease;
+        }
+
         @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        .result .result-icon { font-size: 2rem; margin-bottom: 0.35rem; }
-        .result .result-label { font-size: 1.1rem; font-weight: 600; }
-        .result .result-confidence {
-            font-size: 0.85rem;
-            margin-top: 0.3rem;
-            opacity: 0.85;
-        }
-        .result .result-url {
-            font-size: 0.78rem;
-            margin-top: 0.6rem;
-            word-break: break-all;
-            opacity: 0.6;
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
 
-        .result.safe {
-            background: rgba(34, 197, 94, 0.12);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            color: #86efac;
-        }
-        .result.phishing {
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
-        }
-        .result.error {
-            background: rgba(234, 179, 8, 0.12);
-            border: 1px solid rgba(234, 179, 8, 0.3);
-            color: #fde68a;
-        }
-
-        /* Confidence bar */
-        .confidence-bar-track {
-            margin-top: 0.75rem;
-            height: 6px;
+        .threat-badge {
+            width: 56px;
+            height: 56px;
             border-radius: 3px;
-            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .threat-badge::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 3px;
+            border: 1px solid currentColor;
+            opacity: 0.4;
+        }
+
+        .badge-safe   { background: rgba(0,255,157,0.08); color: var(--accent2); box-shadow: 0 0 20px var(--safe-glow); }
+        .badge-threat { background: rgba(255,45,85,0.08); color: var(--danger);  box-shadow: 0 0 20px var(--danger-glow); }
+        .badge-error  { background: rgba(255,165,0,0.08); color: #ffaa00; }
+
+        .result-meta { flex: 1; }
+
+        .result-verdict {
+            font-family: var(--display);
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+
+        .verdict-safe   { color: var(--accent2); text-shadow: 0 0 15px var(--safe-glow); }
+        .verdict-threat { color: var(--danger);  text-shadow: 0 0 15px var(--danger-glow); }
+        .verdict-error  { color: #ffaa00; }
+
+        .result-sublabel {
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--dim);
+            margin-top: 0.2rem;
+            letter-spacing: 0.1em;
+        }
+
+        /* Metrics grid */
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric {
+            background: rgba(0,212,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 0.65rem 0.85rem;
+        }
+
+        .metric-label {
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            color: var(--dim);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 0.2rem;
+        }
+
+        .metric-value {
+            font-family: var(--mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        /* Threat bar */
+        .bar-row {
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .bar-label {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--dim);
+            letter-spacing: 0.1em;
+            width: 60px;
+            flex-shrink: 0;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 5px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
             overflow: hidden;
         }
-        .confidence-bar-fill {
+
+        .bar-fill {
             height: 100%;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .bar-fill.safe   { background: linear-gradient(90deg, var(--accent2), #00c47a); }
+        .bar-fill.threat { background: linear-gradient(90deg, #ff2d55, #ff6b35); }
+        .bar-fill.neutral { background: linear-gradient(90deg, var(--accent), #4488ff); }
+
+        .bar-pct {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--dim);
+            width: 38px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* URL display */
+        .url-display {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
             border-radius: 3px;
-            transition: width 0.6s ease;
+            padding: 0.6rem 0.85rem;
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--dim);
+            word-break: break-all;
+            line-height: 1.4;
         }
-        .result.safe .confidence-bar-fill { background: #22c55e; }
-        .result.phishing .confidence-bar-fill { background: #ef4444; }
 
-        /* Footer */
+        .url-display span { color: var(--accent); }
+
+        /* ── Footer ── */
         .footer {
-            text-align: center;
-            margin-top: 1.5rem;
-            font-size: 0.75rem;
-            color: #6b7280;
+            margin-top: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            color: var(--dim);
+            letter-spacing: 0.08em;
         }
 
-        /* Responsive */
-        @media (max-width: 480px) {
-            .card { padding: 1.5rem; }
-            .header h1 { font-size: 1.4rem; }
+        .footer-left { display: flex; align-items: center; gap: 0.5rem; }
+        .footer-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--dim); }
+
+        /* Scanning animation overlay */
+        .scan-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .scanning .scan-line {
+            opacity: 0.6;
+            animation: scan-sweep 0.8s ease-in-out infinite;
+        }
+
+        @keyframes scan-sweep {
+            0%   { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        /* Mobile */
+        @media (max-width: 460px) {
+            h1 { font-size: 1.6rem; }
+            .metrics { grid-template-columns: 1fr; }
+            .panel-inner { padding: 1.25rem; }
         }
     </style>
 </head>
-
 <body>
 
-<div class="app">
+<div class="wrapper">
+
+    <!-- Header -->
     <div class="header">
-        <div class="logo">🛡️</div>
-        <h1>PhishGuard</h1>
-        <p>AI-powered phishing URL detection</p>
+        <div class="logo-ring">
+            <span class="logo-icon">🛡</span>
+        </div>
+        <h1>PHISH<span>GUARD</span></h1>
+        <p class="tagline">Real-time URL Threat Intelligence System</p>
     </div>
 
-    <div class="card">
-        <div class="input-group">
-            <span class="icon">🔗</span>
-            <input
-                type="text"
-                id="urlInput"
-                placeholder="Enter a URL to analyze…"
-                autocomplete="off"
-                spellcheck="false"
-            />
-        </div>
+    <!-- Status bar -->
+    <div class="status-bar">
+        <span class="status-dot"></span>
+        <span class="status-text">SYSTEM ONLINE</span>
+        <span class="status-sep">//</span>
+        <span>ML ENGINE READY</span>
+        <span class="status-sep">//</span>
+        <span id="scanCount">0 SCANS TODAY</span>
+    </div>
 
-        <button class="btn" id="analyzeBtn" onclick="checkUrl()">
-            <span class="spinner" id="spinner"></span>
-            <span id="btnText">Analyze URL</span>
-        </button>
+    <!-- Main Panel -->
+    <div class="panel" id="mainPanel">
+        <div class="scan-line" id="scanLine"></div>
+        <div class="panel-inner">
 
-        <div class="result" id="result">
-            <div class="result-icon" id="resultIcon"></div>
-            <div class="result-label" id="resultLabel"></div>
-            <div class="result-confidence" id="resultConfidence"></div>
-            <div class="confidence-bar-track" id="barTrack">
-                <div class="confidence-bar-fill" id="barFill"></div>
+            <div class="input-label">
+                <span>TARGET_URL</span> — ENTER ADDRESS TO ANALYZE
             </div>
-            <div class="result-url" id="resultUrl"></div>
+
+            <div class="input-wrap">
+                <span class="input-prefix">~/</span>
+                <input
+                    type="text"
+                    id="urlInput"
+                    placeholder="https://example.com/path?query=value"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+            </div>
+
+            <button class="scan-btn" id="analyzeBtn" onclick="checkUrl()">
+                <span class="spinner" id="spinner"></span>
+                <span id="btnText">⟩ INITIATE SCAN</span>
+            </button>
+
+            <!-- Result -->
+            <div id="result" class="result">
+                <div class="divider">
+                    <div class="divider-line"></div>
+                    <span class="divider-label">SCAN RESULTS</span>
+                    <div class="divider-line"></div>
+                </div>
+
+                <div class="result-header">
+                    <div class="threat-badge" id="threatBadge">
+                        <span id="resultIcon"></span>
+                    </div>
+                    <div class="result-meta">
+                        <div class="result-verdict" id="resultVerdict"></div>
+                        <div class="result-sublabel" id="resultSublabel"></div>
+                    </div>
+                </div>
+
+                <div class="metrics" id="metricsGrid">
+                    <div class="metric">
+                        <div class="metric-label">CONFIDENCE</div>
+                        <div class="metric-value" id="metricConf">—</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">THREAT LEVEL</div>
+                        <div class="metric-value" id="metricLevel">—</div>
+                    </div>
+                </div>
+
+                <div class="bar-row">
+                    <span class="bar-label">SAFE</span>
+                    <div class="bar-track"><div class="bar-fill safe" id="barSafe"></div></div>
+                    <span class="bar-pct" id="pctSafe">0%</span>
+                </div>
+                <div class="bar-row" style="margin-bottom:1rem">
+                    <span class="bar-label">THREAT</span>
+                    <div class="bar-track"><div class="bar-fill threat" id="barThreat"></div></div>
+                    <span class="bar-pct" id="pctThreat">0%</span>
+                </div>
+
+                <div class="url-display">
+                    <span>URL://</span> <span id="resultUrl" style="color:#7a9ab8"></span>
+                </div>
+            </div>
+
         </div>
     </div>
 
+    <!-- Footer -->
     <div class="footer">
-        PhishGuard &mdash; Powered by Machine Learning
+        <div class="footer-left">
+            <span class="footer-dot"></span>
+            <span>PHISHGUARD v2.0</span>
+            <span class="footer-dot"></span>
+            <span>ML-POWERED</span>
+        </div>
+        <span id="timestamp"></span>
     </div>
+
 </div>
 
 <script>
@@ -244,19 +644,31 @@
     const spinner    = document.getElementById('spinner');
     const btnText    = document.getElementById('btnText');
     const resultDiv  = document.getElementById('result');
+    const mainPanel  = document.getElementById('mainPanel');
+    const scanLine   = document.getElementById('scanLine');
 
-    // Allow Enter key to trigger analysis
+    let scanCount = 0;
+
+    // Timestamp
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('timestamp').textContent =
+            now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
     urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkUrl(); });
 
     async function checkUrl() {
         const url = urlInput.value.trim();
         if (!url) { urlInput.focus(); return; }
 
-        // UI: loading state
         resultDiv.style.display = 'none';
         analyzeBtn.disabled = true;
         spinner.style.display = 'inline-block';
-        btnText.textContent = 'Analyzing…';
+        btnText.textContent = 'SCANNING…';
+        mainPanel.classList.add('scanning');
 
         try {
             const response = await fetch('/predict', {
@@ -267,47 +679,86 @@
 
             if (!response.ok) {
                 const err = await response.json();
-                throw new Error(err.detail || 'Error analyzing URL');
+                throw new Error(err.detail || 'Analysis failed');
             }
 
             const data = await response.json();
-            const pct  = (data.confidence * 100).toFixed(1);
+            const pct = (data.confidence * 100).toFixed(1);
+            scanCount++;
+            document.getElementById('scanCount').textContent = scanCount + ' SCANS TODAY';
 
             if (data.is_phishing) {
-                showResult('phishing', '⚠️', 'Phishing Detected', `${pct}% confidence this is malicious`, pct, data.url);
+                showResult('threat', '⚠', 'THREAT DETECTED', 'MALICIOUS URL IDENTIFIED', pct, data.url);
             } else {
-                showResult('safe', '✅', 'Legitimate Website', `${pct}% confidence this is safe`, pct, data.url);
+                showResult('safe', '✓', 'NO THREAT', 'LEGITIMATE URL VERIFIED', pct, data.url);
             }
         } catch (error) {
-            showResult('error', '⚡', 'Analysis Failed', error.message, 0, url);
+            showResult('error', '!', 'SCAN FAILED', error.message.toUpperCase(), 0, url);
         } finally {
             analyzeBtn.disabled = false;
             spinner.style.display = 'none';
-            btnText.textContent = 'Analyze URL';
+            btnText.textContent = '⟩ INITIATE SCAN';
+            mainPanel.classList.remove('scanning');
         }
     }
 
-    function showResult(type, icon, label, confidence, pct, url) {
-        resultDiv.className = 'result ' + type;
-        document.getElementById('resultIcon').textContent       = icon;
-        document.getElementById('resultLabel').textContent      = label;
-        document.getElementById('resultConfidence').textContent = confidence;
-        document.getElementById('resultUrl').textContent        = url;
+    function showResult(type, icon, verdict, sublabel, pct, url) {
+        const badge   = document.getElementById('threatBadge');
+        const vEl     = document.getElementById('resultVerdict');
+        const subEl   = document.getElementById('resultSublabel');
+        const confEl  = document.getElementById('metricConf');
+        const levelEl = document.getElementById('metricLevel');
 
-        const barTrack = document.getElementById('barTrack');
-        const barFill  = document.getElementById('barFill');
+        // Reset bar fills
+        document.getElementById('barSafe').style.width   = '0%';
+        document.getElementById('barThreat').style.width = '0%';
 
-        if (type === 'error') {
-            barTrack.style.display = 'none';
+        document.getElementById('resultIcon').textContent = icon;
+        document.getElementById('resultUrl').textContent  = url;
+        vEl.textContent  = verdict;
+        subEl.textContent = sublabel;
+        confEl.textContent = pct > 0 ? pct + '%' : 'N/A';
+
+        // Set classes
+        badge.className = 'threat-badge';
+        vEl.className   = 'result-verdict';
+
+        if (type === 'safe') {
+            badge.classList.add('badge-safe');
+            vEl.classList.add('verdict-safe');
+            levelEl.textContent = 'LOW';
+            levelEl.style.color = 'var(--accent2)';
+        } else if (type === 'threat') {
+            badge.classList.add('badge-threat');
+            vEl.classList.add('verdict-threat');
+            levelEl.textContent = 'HIGH';
+            levelEl.style.color = 'var(--danger)';
         } else {
-            barTrack.style.display = 'block';
-            barFill.style.width = '0%';
-            requestAnimationFrame(() => { barFill.style.width = pct + '%'; });
+            badge.classList.add('badge-error');
+            vEl.classList.add('verdict-error');
+            levelEl.textContent = '—';
+            levelEl.style.color = 'var(--dim)';
         }
 
         resultDiv.style.display = 'block';
+
+        // Animate bars after paint
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                if (type === 'safe') {
+                    document.getElementById('barSafe').style.width   = pct + '%';
+                    document.getElementById('barThreat').style.width = (100 - pct) + '%';
+                    document.getElementById('pctSafe').textContent   = pct + '%';
+                    document.getElementById('pctThreat').textContent = (100 - parseFloat(pct)).toFixed(1) + '%';
+                } else if (type === 'threat') {
+                    document.getElementById('barThreat').style.width = pct + '%';
+                    document.getElementById('barSafe').style.width   = (100 - pct) + '%';
+                    document.getElementById('pctThreat').textContent = pct + '%';
+                    document.getElementById('pctSafe').textContent   = (100 - parseFloat(pct)).toFixed(1) + '%';
+                }
+            }, 50);
+        });
     }
 </script>
-
 </body>
 </html>
