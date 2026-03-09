@@ -2,9 +2,10 @@ fastapi
 uvicorn
 scikit-learn
 pandas
+numpy
 joblib
 tldextract
 pydantic
 pytest
 httpx
-requests
+aiofiles
