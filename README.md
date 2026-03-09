@@ -14,8 +14,11 @@ A machine learning-based API to detect phishing URLs, built with FastAPI, Scikit
 - Python 3.8+ installed.
 - [Git](https://git-scm.com/) installed and added to PATH.
 
-## How to Run (No Docker)
-
+## How to Run
+first setup an environment using terminal in your project folder
+```bash
+.\venv\Scripts\activate
+```
 ### 1. Install Dependencies
 Open your terminal in the project folder and run:
 
