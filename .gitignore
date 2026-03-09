@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+ENV/
+
+# Data and Models (usually too large for Git)
+data/*.csv
+models/*.joblib
+
+# IDEs
+.vscode/
+.idea/

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Phishing Detector</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .safe {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .phishing {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .error {
+            background-color: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Phishing Website Detector</h1>
+    <p>Enter a URL to check if it's legitimate or phishing.</p>
+
+    <input type="text" id="urlInput" placeholder="e.g. http://google.com" />
+    <button onclick="checkUrl()">Check URL</button>
+
+    <div id="result"></div>
+
+    <script>
+        async function checkUrl() {
+            const url = document.getElementById('urlInput').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'none';
+            resultDiv.className = '';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                resultDiv.style.display = 'block';
+                if (!response.ok) throw new Error(data.detail || 'Error checking URL');
+
+                resultDiv.textContent = `Prediction: ${data.prediction} (Confidence: ${(data.confidence * 100).toFixed(2)}%)`;
+                resultDiv.classList.add(data.is_phishing ? 'phishing' : 'safe');
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = error.message;
+                resultDiv.classList.add('error');
+            }
+        }
+    </script>
+</body>
+
+</html>
